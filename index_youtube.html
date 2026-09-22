@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>02:37</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='%23e8b96a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg-night-top:#05070c;
+    --bg-night-bottom:#0c1626;
+    --bg-dawn-top:#0e1524;
+    --bg-dawn-bottom:#2a3448;
+    --bg-day-top:#232c3d;
+    --bg-day-bottom:#3c4a63;
+    --bg-evening-top:#070a12;
+    --bg-evening-bottom:#101d31;
+
+    --ink:#e9ebf1;
+    --ink-dim:#8892a8;
+    --ink-faint:#5a6379;
+    --light-warm:#efc27f;
+    --light-warm-soft:rgba(239,194,127,0.55);
+    --glass-line:rgba(180,196,225,0.08);
+    --rain-color:rgba(200,215,240,0.5);
+
+    --building-far:#161f30;
+    --building-mid:#101828;
+    --building-near:#0a1120;
+
+    --ease-slow: cubic-bezier(.22,.61,.36,1);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    overflow:hidden;
+    background:#05070c;
+  }
+  body{
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    height:100svh;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  button{
+    font-family:inherit;
+    color:inherit;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:0;
+  }
+
+  /* ---------- SCENE ---------- */
+  .scene{
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:linear-gradient(to bottom, var(--bg-night-top), var(--bg-night-bottom) 65%);
+    transition:background 6s var(--ease-slow);
+  }
+  body[data-period="dawn"] .scene{ background:linear-gradient(to bottom, var(--bg-dawn-top), var(--bg-dawn-bottom) 70%); }
+  body[data-period="day"]  .scene{ background:linear-gradient(to bottom, var(--bg-day-top), var(--bg-day-bottom) 75%); }
+  body[data-period="evening"] .scene{ background:linear-gradient(to bottom, var(--bg-evening-top), var(--bg-evening-bottom) 65%); }
+
+  /* soft moon / sun glow */
+  .glow{
+    position:absolute;
+    top:8%;
+    right:18%;
+    width:22vmax;
+    height:22vmax;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(239,194,127,0.16), rgba(239,194,127,0) 70%);
+    filter:blur(2px);
+    pointer-events:none;
+    transition:opacity 6s var(--ease-slow);
+  }
+  body[data-period="day"] .glow{ opacity:0.4; background:radial-gradient(circle, rgba(255,236,200,0.25), rgba(255,236,200,0) 70%); }
+
+  .stars{
+    position:absolute; inset:0;
+    pointer-events:none;
+    opacity:1;
+    transition:opacity 5s var(--ease-slow);
+  }
+  body[data-period="day"] .stars,
+  body[data-period="dawn"] .stars{ opacity:0.15; }
+  .star{
+    position:absolute;
+    width:2px; height:2px;
+    border-radius:50%;
+    background:#cfd8ea;
+    animation:twinkle 7s ease-in-out infinite;
+  }
+  @keyframes twinkle{ 0%,100%{opacity:.15;} 50%{opacity:.9;} }
+
+  /* ---------- CITY ---------- */
+  .city{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:58%;
+    will-change:transform;
+    transition:transform .3s ease-out;
+  }
+  .building{
+    position:absolute;
+    bottom:0;
+    background:var(--building-mid);
+    border-top:1px solid rgba(255,255,255,0.02);
+  }
+  .building.far{ background:var(--building-far); }
+  .building.near{ background:var(--building-near); }
+
+  .win{
+    position:absolute;
+    background:var(--light-warm-soft);
+    box-shadow:0 0 4px 1px rgba(239,194,127,0.25);
+  }
+  .win.off{ background:rgba(120,132,160,0.05); box-shadow:none; }
+  .win.flicker{ animation:flicker linear infinite; }
+  @keyframes flicker{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+  .pole{
+    position:absolute;
+    bottom:0;
+    width:2px;
+    background:rgba(60,70,95,0.6);
+  }
+  .pole::after{
+    content:'';
+    position:absolute;
+    top:-3px; left:50%;
+    transform:translateX(-50%);
+    width:6px; height:6px;
+    border-radius:50%;
+    background:var(--light-warm);
+    box-shadow:0 0 10px 4px rgba(239,194,127,0.35);
+  }
+
+  /* ---------- WINDOW PANE OVERLAY ---------- */
+  .pane{
+    position:absolute; inset:0;
+    pointer-events:none;
+    will-change:transform;
+    transition:transform .3s ease-out;
+  }
+  .mullion-v{
+    position:absolute;
+    top:6%; bottom:6%;
+    left:50%;
+    width:1px;
+    background:linear-gradient(to bottom, transparent, rgba(200,210,230,0.10) 20%, rgba(200,210,230,0.10) 80%, transparent);
+  }
+  .mullion-h{
+    position:absolute;
+    left:4%; right:4%;
+    top:50%;
+    height:1px;
+    background:linear-gradient(to right, transparent, rgba(200,210,230,0.10) 20%, rgba(200,210,230,0.10) 80%, transparent);
+  }
+  .sill{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:3.5vh;
+    background:linear-gradient(to top, rgba(4,6,10,0.85), transparent);
+  }
+  .vignette{
+    position:absolute; inset:0;
+    pointer-events:none;
+    background:radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(2,3,6,0.75) 100%);
+  }
+
+  /* ---------- RAIN ---------- */
+  #rain-canvas{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    opacity:0.55;
+    transition:opacity .8s ease;
+  }
+  #rain-canvas.hidden{ opacity:0; }
+
+  .drips{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .drip{
+    position:absolute;
+    top:-4%;
+    width:2px;
+    border-radius:2px;
+    background:linear-gradient(to bottom, rgba(210,222,240,0), rgba(210,222,240,0.55));
+    animation-name:drip-fall;
+    animation-timing-function:cubic-bezier(.3,0,.7,1);
+    animation-fill-mode:forwards;
+  }
+  @keyframes drip-fall{
+    0%{ transform:translateY(0) translateX(0); opacity:0; }
+    8%{ opacity:.7; }
+    90%{ opacity:.5; }
+    100%{ transform:translateY(60vh) translateX(3px); opacity:0; }
+  }
+
+  .grain{
+    position:absolute; inset:-20%;
+    pointer-events:none;
+    opacity:0.035;
+    mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- CONTENT ---------- */
+  .content{
+    position:relative;
+    z-index:5;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:0 6vw;
+    pointer-events:none;
+  }
+  .clock{
+    font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    font-weight:400;
+    font-size:clamp(3.4rem, 13vw, 7.2rem);
+    letter-spacing:0.04em;
+    line-height:1;
+    color:var(--ink);
+    text-shadow:0 0 30px rgba(239,194,127,0.12), 0 2px 20px rgba(0,0,0,0.4);
+    font-variant-numeric:tabular-nums;
+  }
+  .date{
+    margin-top:0.6em;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    color:var(--ink-faint);
+    font-weight:300;
+  }
+  .phrase{
+    margin-top:1.4em;
+    max-width:26em;
+    font-size:clamp(0.92rem, 2.1vw, 1.08rem);
+    font-weight:300;
+    color:var(--ink-dim);
+    letter-spacing:0.01em;
+    line-height:1.6;
+    min-height:1.6em;
+    opacity:1;
+    transition:opacity 1.4s var(--ease-slow);
+  }
+  .phrase.fading{ opacity:0; }
+
+  .random-line{
+    margin-top:1.1em;
+    font-size:0.86rem;
+    font-weight:300;
+    color:var(--ink-faint);
+    font-style:italic;
+    min-height:1.4em;
+    opacity:0;
+    transition:opacity 1.1s var(--ease-slow);
+  }
+  .random-line.show{ opacity:1; }
+
+  /* ---------- TOAST (window click) ---------- */
+  .toast{
+    position:absolute;
+    top:14%;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:0.85rem;
+    font-weight:300;
+    letter-spacing:0.02em;
+    color:var(--ink-dim);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 1.6s ease, transform 1.6s ease;
+    z-index:6;
+    text-align:center;
+    width:80%;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(4px); }
+
+  /* ---------- COFFEE ---------- */
+  .coffee{
+    position:absolute;
+    right:7%;
+    bottom:13vh;
+    width:56px;
+    height:52px;
+    opacity:0;
+    transform:translateY(14px);
+    pointer-events:none;
+    transition:opacity 1s var(--ease-slow), transform 1s var(--ease-slow);
+    z-index:7;
+  }
+  .coffee.visible{ opacity:1; transform:translateY(0); }
+  .mug{
+    position:absolute;
+    bottom:0; left:6px;
+    width:36px; height:26px;
+    background:#151a22;
+    border:1px solid rgba(180,196,225,0.15);
+    border-top:none;
+    border-radius:0 0 8px 8px;
+  }
+  .mug::before{
+    content:'';
+    position:absolute;
+    top:-2px; left:0; right:0;
+    height:4px;
+    background:#3a2a1c;
+    border-radius:50%;
+    opacity:0.85;
+  }
+  .handle{
+    position:absolute;
+    bottom:4px; right:-10px;
+    width:12px; height:14px;
+    border:2px solid rgba(180,196,225,0.15);
+    border-left:none;
+    border-radius:0 8px 8px 0;
+  }
+  .steam{
+    position:absolute;
+    bottom:26px;
+    width:3px; height:16px;
+    border-radius:3px;
+    background:linear-gradient(to top, rgba(220,225,235,0.35), rgba(220,225,235,0));
+    animation:rise 3.2s ease-in infinite;
+    opacity:0;
+  }
+  .coffee.visible .steam{ opacity:1; }
+  .steam.s1{ left:12px; animation-delay:0s; }
+  .steam.s2{ left:20px; animation-delay:1s; }
+  .steam.s3{ left:16px; animation-delay:2s; }
+  @keyframes rise{
+    0%{ transform:translateY(0) translateX(0) scaleY(0.6); opacity:0; }
+    20%{ opacity:.5; }
+    100%{ transform:translateY(-26px) translateX(4px) scaleY(1.3); opacity:0; }
+  }
+
+  /* ---------- PLAYER ---------- */
+  .youtube-source{
+    width:140px;
+    height:79px;
+    border-radius:8px;
+    overflow:hidden;
+    flex:0 0 auto;
+    background:#000;
+  }
+  .youtube-source iframe{
+    width:100%;
+    height:100%;
+    border:0;
+  }
+  .player{
+    position:absolute;
+    left:50%;
+    bottom:9.5vh;
+    transform:translate(-50%, 10px);
+    width:min(320px, 78vw);
+    padding:12px 16px;
+    border-radius:10px;
+    background:rgba(10,14,22,0.55);
+    border:1px solid rgba(180,196,225,0.08);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .9s var(--ease-slow), transform .9s var(--ease-slow);
+    z-index:7;
+  }
+  .player.visible{ opacity:1; transform:translate(-50%, 0); pointer-events:auto; }
+  .track-name{
+    font-size:0.74rem;
+    font-weight:300;
+    letter-spacing:0.03em;
+    color:var(--ink-dim);
+    margin-bottom:10px;
+    text-align:left;
+  }
+  .player-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .play-btn{
+    width:26px; height:26px;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--ink);
+    opacity:0.85;
+    font-size:0.8rem;
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .play-btn:hover{ opacity:1; transform:scale(1.08); }
+  .progress-track{
+    flex:1;
+    height:2px;
+    background:rgba(180,196,225,0.15);
+    border-radius:2px;
+    position:relative;
+    cursor:pointer;
+  }
+  .progress-fill{
+    position:absolute; left:0; top:0; bottom:0;
+    width:0%;
+    background:var(--light-warm-soft);
+    border-radius:2px;
+  }
+  .time{
+    font-size:0.66rem;
+    color:var(--ink-faint);
+    min-width:32px;
+    text-align:right;
+  }
+  .volume{
+    -webkit-appearance:none;
+    appearance:none;
+    width:44px;
+    height:2px;
+    background:rgba(180,196,225,0.18);
+    border-radius:2px;
+    outline:none;
+  }
+  .volume::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--ink-dim);
+    cursor:pointer;
+  }
+  .volume::-moz-range-thumb{
+    width:8px; height:8px;
+    border:none;
+    border-radius:50%;
+    background:var(--ink-dim);
+    cursor:pointer;
+  }
+
+  /* ---------- CONTROLS ---------- */
+  .controls{
+    position:absolute;
+    left:50%;
+    bottom:4vh;
+    transform:translateX(-50%);
+    display:flex;
+    gap:clamp(18px, 4vw, 34px);
+    z-index:8;
+  }
+  .ctrl{
+    font-size:0.78rem;
+    font-weight:300;
+    letter-spacing:0.02em;
+    color:var(--ink-faint);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    transition:color .5s ease, transform .5s ease, text-shadow .5s ease;
+    white-space:nowrap;
+  }
+  .ctrl:hover{
+    color:var(--ink-dim);
+    transform:translateY(-1px);
+  }
+  .ctrl.active{
+    color:var(--ink);
+    text-shadow:0 0 12px rgba(239,194,127,0.25);
+  }
+  .ctrl .sym{ font-size:0.9rem; }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 640px){
+    .clock{ font-size:clamp(2.9rem, 15vw, 4.6rem); }
+    .phrase{ font-size:0.88rem; max-width:88vw; }
+    .controls{
+      gap:16px;
+      bottom:3.2vh;
+    }
+    .ctrl span:not(.sym){ display:none; }
+    .ctrl{ font-size:1.05rem; }
+    .player{
+      width:88vw;
+      bottom:9vh;
+    }
+    .coffee{
+      right:6%;
+      bottom:15vh;
+      transform:translateY(10px) scale(0.85);
+    }
+    .coffee.visible{ transform:translateY(0) scale(0.85); }
+    .toast{ top:11%; font-size:0.8rem; }
+  }
+
+  @media (max-height: 560px){
+    .clock{ font-size:clamp(2.2rem, 10vw, 3.4rem); }
+    .phrase{ margin-top:0.8em; }
+    .controls{ bottom:2vh; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  }
+</style>
+</head>
+<body data-period="night">
+
+<div class="scene" id="scene">
+  <div class="glow"></div>
+  <div class="stars" id="stars"></div>
+
+  <div class="city" id="city"></div>
+
+  <canvas id="rain-canvas"></canvas>
+  <div class="drips" id="drips"></div>
+
+  <div class="pane" id="pane">
+    <div class="mullion-v"></div>
+    <div class="mullion-h"></div>
+    <div class="sill"></div>
+  </div>
+
+  <div class="vignette"></div>
+  <div class="grain"></div>
+
+  <div class="content">
+    <div class="clock" id="clock">02:37</div>
+    <div class="date" id="date"></div>
+    <div class="phrase" id="phrase"></div>
+    <div class="random-line" id="randomLine"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="coffee" id="coffee">
+    <div class="steam s1"></div>
+    <div class="steam s2"></div>
+    <div class="steam s3"></div>
+    <div class="mug"><div class="handle"></div></div>
+  </div>
+
+  <div class="player" id="player">
+    <div class="track-name" id="trackName">02:37 — somewhere quiet</div>
+    <div class="player-row">
+      <button class="play-btn" id="prevBtn" aria-label="Faixa anterior">‹</button>
+      <button class="play-btn" id="playBtn" aria-label="Reproduzir">▶</button>
+      <button class="play-btn" id="nextBtn" aria-label="Próxima faixa">›</button>
+      <div class="youtube-source" id="youtubeSource" aria-label="Player do YouTube">
+        <div id="youtubePlayer"></div>
+      </div>
+      <div class="progress-track" id="progressTrack">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <span class="time" id="timeLabel">0:00</span>
+      <input type="range" class="volume" id="volume" min="0" max="100" value="60" aria-label="Volume">
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl" id="rainToggle"><span class="sym">☁</span><span>Chuva</span></button>
+    <button class="ctrl" id="musicToggle"><span class="sym">♫</span><span>Música</span></button>
+    <button class="ctrl" id="coffeeToggle"><span class="sym">☕</span><span>Café</span></button>
+    <button class="ctrl" id="thingToggle"><span class="sym">✦</span><span>uma coisa</span></button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ======================= CLOCK & PERIOD ======================= */
+  const clockEl = document.getElementById('clock');
+  const dateEl = document.getElementById('date');
+  const phraseEl = document.getElementById('phrase');
+  const body = document.body;
+
+  const phrasesByPeriod = {
+    night: [
+      "Você também não deveria estar dormindo?",
+      "A cidade inteira parece estar segurando a respiração.",
+      "Só o silêncio ainda está acordado com você.",
+      "Alguma coisa sobre essa hora deixa tudo mais honesto.",
+      "Lá fora, quase ninguém. Aqui dentro, só você."
+    ],
+    dawn: [
+      "Bom dia. Ou boa sorte.",
+      "O céu ainda está decidindo se vai clarear.",
+      "A noite está entregando o turno, devagar.",
+      "Em breve alguém vai ligar o rádio em algum lugar.",
+      "Quase amanheceu — quase nada mudou."
+    ],
+    day: [
+      "Talvez você devesse estar fazendo alguma coisa agora.",
+      "O mundo lá fora está mais barulhento que aqui dentro.",
+      "Em algum lugar, é sempre madrugada para alguém.",
+      "Você pode voltar aqui mais tarde. Vai estar te esperando.",
+      "Nem tudo precisa acontecer à luz do dia."
+    ],
+    evening: [
+      "A noite ainda é jovem.",
+      "As luzes estão começando a se acender, uma a uma.",
+      "Alguma coisa boa costuma começar por volta dessa hora.",
+      "O dia está terminando de sair de cena.",
+      "Daqui a pouco, a cidade vai ficar só sua de novo."
+    ]
+  };
+
+  function getPeriod(h){
+    if (h >= 0 && h < 5) return 'night';
+    if (h >= 5 && h < 9) return 'dawn';
+    if (h >= 9 && h < 18) return 'day';
+    return 'evening';
+  }
+
+  let currentPeriod = null;
+  let currentPhrase = null;
+
+  function pickPhrase(period){
+    const list = phrasesByPeriod[period];
+    let p;
+    do { p = list[Math.floor(Math.random()*list.length)]; } while (p === currentPhrase && list.length > 1);
+    return p;
+  }
+
+  function setPhrase(period){
+    currentPhrase = pickPhrase(period);
+    phraseEl.classList.add('fading');
+    setTimeout(() => {
+      phraseEl.textContent = currentPhrase;
+      phraseEl.classList.remove('fading');
+    }, 500);
+  }
+
+  const weekdays = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  const months = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+  function updateClock(){
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    clockEl.textContent = hh + ':' + mm;
+    dateEl.textContent = weekdays[now.getDay()] + ', ' + now.getDate() + ' de ' + months[now.getMonth()];
+
+    const period = getPeriod(now.getHours());
+    if (period !== currentPeriod){
+      currentPeriod = period;
+      body.setAttribute('data-period', period);
+      setPhrase(period);
+      rebuildCity();
+    }
+  }
+
+  /* ======================= STARS ======================= */
+  const starsEl = document.getElementById('stars');
+  (function buildStars(){
+    const frag = document.createDocumentFragment();
+    const count = 40;
+    for (let i=0;i<count;i++){
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.left = Math.random()*100 + '%';
+      s.style.top = (Math.random()*45) + '%';
+      s.style.animationDuration = (4 + Math.random()*6) + 's';
+      s.style.animationDelay = (Math.random()*6) + 's';
+      frag.appendChild(s);
+    }
+    starsEl.appendChild(frag);
+  })();
+
+  /* ======================= CITY ======================= */
+  const cityEl = document.getElementById('city');
+
+  function buildLayer(container, opts){
+    const { count, minH, maxH, minW, maxW, cls, winDensity, litChance } = opts;
+    for (let i=0;i<count;i++){
+      const b = document.createElement('div');
+      b.className = 'building ' + cls;
+      const w = minW + Math.random()*(maxW-minW);
+      const h = minH + Math.random()*(maxH-minH);
+      const left = (i / count) * 100 + (Math.random()*4 - 2);
+      b.style.width = w + 'px';
+      b.style.height = h + 'px';
+      b.style.left = left + '%';
+
+      const cols = Math.max(1, Math.floor(w / 14));
+      const rows = Math.max(1, Math.floor(h / 16));
+      for (let r=0;r<rows;r++){
+        for (let c=0;c<cols;c++){
+          if (Math.random() > winDensity) continue;
+          const lit = Math.random() < litChance;
+          const win = document.createElement('div');
+          win.className = 'win' + (lit ? '' : ' off');
+          win.style.width = '3px';
+          win.style.height = '5px';
+          win.style.left = (c * (w/cols) + 5) + 'px';
+          win.style.bottom = (r * (h/rows) + 6) + 'px';
+          if (lit && Math.random() < 0.12){
+            win.classList.add('flicker');
+            win.style.animationDuration = (5 + Math.random()*9) + 's';
+          }
+          b.appendChild(win);
+        }
+      }
+      container.appendChild(b);
+    }
+  }
+
+  function rebuildCity(){
+    cityEl.innerHTML = '';
+    let litChance;
+    if (currentPeriod === 'night') litChance = 0.5;
+    else if (currentPeriod === 'dawn') litChance = 0.22;
+    else if (currentPeriod === 'day') litChance = 0.04;
+    else litChance = 0.42;
+
+    buildLayer(cityEl, { count:9,  minH:60,  maxH:110, minW:34, maxW:60, cls:'far',  winDensity:0.55, litChance });
+    buildLayer(cityEl, { count:8,  minH:110, maxH:190, minW:40, maxW:74, cls:'mid',  winDensity:0.65, litChance });
+    buildLayer(cityEl, { count:6,  minH:180, maxH:280, minW:56, maxW:96, cls:'near', winDensity:0.7,  litChance });
+
+    for (let i=0;i<3;i++){
+      const pole = document.createElement('div');
+      pole.className = 'pole';
+      pole.style.height = (60 + Math.random()*30) + 'px';
+      pole.style.left = (12 + i*34 + Math.random()*8) + '%';
+      pole.style.opacity = (currentPeriod === 'day') ? '0.3' : '0.9';
+      cityEl.appendChild(pole);
+    }
+  }
+  rebuildCity();
+
+  /* ======================= PARALLAX ======================= */
+  const paneEl = document.getElementById('pane');
+  let targetX = 0, targetY = 0, curX = 0, curY = 0;
+  let supportsHover = true;
+  try {
+    if (window.matchMedia) supportsHover = window.matchMedia('(hover:hover)').matches;
+  } catch (e) { /* segue com o padrão */ }
+
+  if (supportsHover){
+    window.addEventListener('mousemove', (e) => {
+      targetX = (e.clientX / window.innerWidth - 0.5);
+      targetY = (e.clientY / window.innerHeight - 0.5);
+    });
+  }
+
+  function parallaxLoop(){
+    curX += (targetX - curX) * 0.04;
+    curY += (targetY - curY) * 0.04;
+    cityEl.style.transform = 'translate(' + (curX*-14) + 'px,' + (curY*-6) + 'px)';
+    paneEl.style.transform = 'translate(' + (curX*-4) + 'px,' + (curY*-2) + 'px)';
+    requestAnimationFrame(parallaxLoop);
+  }
+  requestAnimationFrame(parallaxLoop);
+
+  /* ======================= WINDOW CLICK MESSAGES ======================= */
+  const toast = document.getElementById('toast');
+  const windowMessages = [
+    "Está frio lá fora.",
+    "Ainda tem alguém acordado.",
+    "A cidade está quieta hoje.",
+    "Dá pra ouvir a chuva daqui.",
+    "Alguma luz ali longe também não dorme.",
+    "O vidro está gelado.",
+    "Tudo parece mais devagar através da janela.",
+    "Ninguém vai notar se você ficar mais um pouco."
+  ];
+  let toastCooldown = false;
+  let toastTimer = null;
+
+  document.getElementById('scene').addEventListener('click', (e) => {
+    if (e.target.closest('.controls') || e.target.closest('.player') || e.target.closest('.coffee')) return;
+    if (toastCooldown) return;
+    if (Math.random() > 0.55) return;
+    toastCooldown = true;
+    const msg = windowMessages[Math.floor(Math.random()*windowMessages.length)];
+    toast.textContent = msg;
+    clearTimeout(toastTimer);
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => { toastCooldown = false; }, 1500);
+    }, 3200);
+  });
+
+  /* ======================= RAIN ======================= */
+  const canvas = document.getElementById('rain-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, drops = [];
+  let rainOn = true;
+  let rainAnimId = null;
+
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function initDrops(){
+    const density = currentPeriod === 'night' ? 110 : 80;
+    drops = [];
+    for (let i=0;i<density;i++){
+      drops.push({
+        x: Math.random()*W,
+        y: Math.random()*H,
+        len: 8 + Math.random()*14,
+        speed: 3 + Math.random()*4,
+        drift: 0.4 + Math.random()*0.4,
+        op: 0.15 + Math.random()*0.3
+      });
+    }
+  }
+  initDrops();
+
+  function drawRain(){
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle = 'rgba(200,215,240,1)';
+    ctx.lineCap = 'round';
+    for (const d of drops){
+      ctx.globalAlpha = d.op;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x + d.drift*2, d.y + d.len);
+      ctx.stroke();
+      d.y += d.speed;
+      d.x += d.drift*0.2;
+      if (d.y > H){
+        d.y = -d.len;
+        d.x = Math.random()*W;
+      }
+    }
+    ctx.globalAlpha = 1;
+    rainAnimId = requestAnimationFrame(drawRain);
+  }
+  rainAnimId = requestAnimationFrame(drawRain);
+
+  const dripsContainer = document.getElementById('drips');
+  let dripInterval = null;
+  function spawnDrip(){
+    const d = document.createElement('div');
+    d.className = 'drip';
+    const h = 30 + Math.random()*70;
+    d.style.height = h + 'px';
+    d.style.left = (10 + Math.random()*80) + '%';
+    const duration = 6 + Math.random()*6;
+    d.style.animationDuration = duration + 's';
+    dripsContainer.appendChild(d);
+    setTimeout(() => d.remove(), duration*1000 + 200);
+  }
+  function startDrips(){
+    if (dripInterval) return;
+    dripInterval = setInterval(spawnDrip, 2200);
+  }
+  function stopDrips(){
+    clearInterval(dripInterval);
+    dripInterval = null;
+  }
+  startDrips();
+
+  const rainToggleBtn = document.getElementById('rainToggle');
+  rainToggleBtn.classList.add('active');
+  rainToggleBtn.addEventListener('click', () => {
+    rainOn = !rainOn;
+    if (rainOn){
+      canvas.classList.remove('hidden');
+      rainToggleBtn.classList.add('active');
+      if (!rainAnimId) rainAnimId = requestAnimationFrame(drawRain);
+      startDrips();
+    } else {
+      canvas.classList.add('hidden');
+      rainToggleBtn.classList.remove('active');
+      cancelAnimationFrame(rainAnimId);
+      rainAnimId = null;
+      stopDrips();
+    }
+  });
+
+  /* ======================= COFFEE ======================= */
+  const coffeeEl = document.getElementById('coffee');
+  const coffeeToggleBtn = document.getElementById('coffeeToggle');
+  coffeeToggleBtn.addEventListener('click', () => {
+    coffeeEl.classList.toggle('visible');
+    coffeeToggleBtn.classList.toggle('active');
+  });
+
+  /* ======================= PLAYER (YOUTUBE) ======================= */
+  const player = document.getElementById('player');
+  const musicToggleBtn = document.getElementById('musicToggle');
+  const playBtn = document.getElementById('playBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const progressFill = document.getElementById('progressFill');
+  const progressTrack = document.getElementById('progressTrack');
+  const timeLabel = document.getElementById('timeLabel');
+  const volume = document.getElementById('volume');
+  const trackName = document.getElementById('trackName');
+
+  /*
+   * IMPORTANTE:
+   * Troque os videoId abaixo pelos IDs dos vídeos do YouTube que você quiser.
+   * Exemplo: https://www.youtube.com/watch?v=ABC123XYZ -> videoId: 'ABC123XYZ'
+   */
+  const tracks = [
+    { name: '02:37 — somewhere quiet', videoId: 'VIDEO_ID_1' },
+    { name: '03:14 — rainy window', videoId: 'VIDEO_ID_2' },
+    { name: '04:26 — empty streets', videoId: 'VIDEO_ID_3' }
+  ];
+
+  let ytPlayer = null;
+  let currentTrack = 0;
+  let progressTimer = null;
+  let youtubeReady = false;
+
+  function formatTime(s){
+    if (!Number.isFinite(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return m + ':' + String(sec).padStart(2, '0');
+  }
+
+  function updateTrackName(){
+    trackName.textContent = tracks[currentTrack].name;
+  }
+
+  function updateProgress(){
+    if (!ytPlayer || !youtubeReady) return;
+    const duration = ytPlayer.getDuration();
+    const current = ytPlayer.getCurrentTime();
+    if (!duration) return;
+    progressFill.style.width = (current / duration * 100) + '%';
+    timeLabel.textContent = formatTime(current);
+  }
+
+  function startProgressTimer(){
+    clearInterval(progressTimer);
+    progressTimer = setInterval(updateProgress, 250);
+  }
+
+  function loadTrack(index, autoplay = false){
+    currentTrack = (index + tracks.length) % tracks.length;
+    updateTrackName();
+    progressFill.style.width = '0%';
+    timeLabel.textContent = '0:00';
+
+    if (!youtubeReady || !ytPlayer) return;
+
+    if (autoplay){
+      ytPlayer.loadVideoById(tracks[currentTrack].videoId);
+    } else {
+      ytPlayer.cueVideoById(tracks[currentTrack].videoId);
+      playBtn.textContent = '▶';
+    }
+  }
+
+  function onYouTubeReady(){
+    ytPlayer = new YT.Player('youtubePlayer', {
+      videoId: tracks[0].videoId,
+      playerVars: {
+        controls: 1,
+        rel: 0,
+        modestbranding: 1,
+        playsinline: 1
+      },
+      events: {
+        onReady: function(){
+          youtubeReady = true;
+          ytPlayer.setVolume(Number(volume.value));
+          updateTrackName();
+          startProgressTimer();
+        },
+        onStateChange: function(event){
+          if (event.data === YT.PlayerState.PLAYING){
+            playBtn.textContent = '❚❚';
+          } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED || event.data === YT.PlayerState.CUED){
+            playBtn.textContent = '▶';
+          }
+
+          if (event.data === YT.PlayerState.ENDED){
+            loadTrack(currentTrack + 1, true);
+          }
+        }
+      }
+    });
+  }
+
+  window.onYouTubeIframeAPIReady = onYouTubeReady;
+
+  playBtn.addEventListener('click', () => {
+    if (!youtubeReady || !ytPlayer) return;
+    const state = ytPlayer.getPlayerState();
+    if (state === YT.PlayerState.PLAYING){
+      ytPlayer.pauseVideo();
+    } else {
+      ytPlayer.playVideo();
+    }
+  });
+
+  prevBtn.addEventListener('click', () => {
+    loadTrack(currentTrack - 1, true);
+  });
+
+  nextBtn.addEventListener('click', () => {
+    loadTrack(currentTrack + 1, true);
+  });
+
+  progressTrack.addEventListener('click', (e) => {
+    if (!youtubeReady || !ytPlayer) return;
+    const duration = ytPlayer.getDuration();
+    if (!duration) return;
+    const rect = progressTrack.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    ytPlayer.seekTo(ratio * duration, true);
+  });
+
+  volume.addEventListener('input', () => {
+    if (youtubeReady && ytPlayer) ytPlayer.setVolume(Number(volume.value));
+  });
+
+  musicToggleBtn.addEventListener('click', () => {
+    player.classList.toggle('visible');
+    musicToggleBtn.classList.toggle('active');
+  });
+
+  loadTrack(0);
+
+  /* ======================= UMA COISA ======================= */
+  const randomPhrases = [
+    "Talvez amanhã seja um dia bom.",
+    "Você chegou até aqui.",
+    "Tem noites que parecem durar mais.",
+    "Algumas músicas sabem demais.",
+    "Você provavelmente vai esquecer esse momento.",
+    "Está tudo quieto agora.",
+    "Nem tudo precisa ser resolvido hoje.",
+    "Alguma coisa em você já sabe descansar.",
+    "As coisas boas também acontecem baixinho.",
+    "Ninguém está te cobrando nada agora.",
+    "Você pode simplesmente ficar.",
+    "Esse silêncio também é seu.",
+    "Amanhã você nem vai lembrar dessa frase.",
+    "Tem gente que dorme cedo. Você não é essa gente hoje.",
+    "A saudade também sabe ser gentil às vezes.",
+    "Você já passou por noites piores que essa.",
+    "Um dia isso também vai ser lembrança.",
+    "O tempo passa diferente depois da meia-noite.",
+    "Talvez você só precisasse de um minuto quieto.",
+    "As luzes distantes também estão sozinhas.",
+    "Você não precisa ter uma razão para estar aqui.",
+    "Alguma coisa boa ainda está por vir.",
+    "Respira. Ainda dá tempo.",
+    "Ninguém mais está vendo isso agora, só você.",
+    "Ficar acordado também é uma forma de sentir.",
+    "As coisas fazem mais sentido baixinho.",
+    "Talvez essa seja a parte tranquila do dia.",
+    "Você está bem onde está.",
+    "Isso também vai passar, devagar.",
+    "Alguns pensamentos só aparecem tarde da noite.",
+    "Fica mais um pouco, se quiser.",
+    "Cada madrugada dessas é só sua."
+  ];
+  let lastRandom = null;
+  const randomLineEl = document.getElementById('randomLine');
+  const thingToggleBtn = document.getElementById('thingToggle');
+
+  thingToggleBtn.addEventListener('click', () => {
+    let p;
+    do { p = randomPhrases[Math.floor(Math.random()*randomPhrases.length)]; } while (p === lastRandom && randomPhrases.length > 1);
+    lastRandom = p;
+    randomLineEl.classList.remove('show');
+    setTimeout(() => {
+      randomLineEl.textContent = p;
+      randomLineEl.classList.add('show');
+    }, 350);
+  });
+
+  /* ======================= INIT ======================= */
+  // Roda por último de propósito: nesse ponto a cidade, a chuva,
+  // o café e o player já existem, então o relógio pode atualizar
+  // tudo com segurança desde o primeiro tick.
+  updateClock();
+  setInterval(updateClock, 1000);
+
+})();
+</script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
